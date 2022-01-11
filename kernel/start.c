@@ -17,6 +17,7 @@ uint64 mscratch0[NCPU * 32];
 extern void timervec();
 
 // entry.S jumps here in machine mode on stack0.
+// entry.S 会 jmp 到这里
 void
 start()
 {
@@ -28,7 +29,7 @@ start()
 
   // set M Exception Program Counter to main, for mret.
   // requires gcc -mcmodel=medany
-  w_mepc((uint64)main);
+  w_mepc((uint64)main);//压测类似在栈中压入main 函数地址一样
 
   // disable paging for now.
   w_satp(0);
@@ -46,7 +47,7 @@ start()
   w_tp(id);
 
   // switch to supervisor mode and jump to main().
-  asm volatile("mret");
+  asm volatile("mret"); //切换到 supervisor 模式，jmmp 到 main 函数
 }
 
 // set up to receive timer interrupts in machine mode,

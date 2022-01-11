@@ -34,7 +34,7 @@ trapinithart(void)
 // called from trampoline.S
 //
 void
-usertrap(void)
+usertrap(void) //看起来是User 进入内核时的处理的函数
 {
   int which_dev = 0;
 
@@ -64,7 +64,7 @@ usertrap(void)
     // so don't enable until done with those registers.
     intr_on();
 
-    syscall();
+    syscall(); //从这里进入系统调用函数
   } else if((which_dev = devintr()) != 0){
     // ok
   } else {
@@ -74,20 +74,20 @@ usertrap(void)
   }
 
   if(p->killed)
-    exit(-1);
+    exit(-1);//如果系统调用返回，会执行到这个位置
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2)
     yield();
 
-  usertrapret();
+  usertrapret(); //看起来是使用堆栈中的值返回到user模式？
 }
 
 //
 // return to user space
 //
 void
-usertrapret(void)
+usertrapret(void) //返回到用户空间
 {
   struct proc *p = myproc();
 

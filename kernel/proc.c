@@ -255,47 +255,54 @@ growproc(int n)
 
 // Create a new process, copying the parent.
 // Sets up child kernel stack to return as if from fork() system call.
+// 创建一个新的进程，复制父进程
+// 设置子进程的内核栈？
 int
-fork(void)
+fork(void) 
 {
   int i, pid;
   struct proc *np;
-  struct proc *p = myproc();
+  struct proc *p = myproc(); //获取一个指向当前进程的 proc 结构的指针
 
   // Allocate process.
+  // 分配新的进程内存
   if((np = allocproc()) == 0){
     return -1;
   }
 
   // Copy user memory from parent to child.
+  // 从父进程复制用户内存到子进程
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
     freeproc(np);
     release(&np->lock);
     return -1;
   }
-  np->sz = p->sz;
+  np->sz = p->sz; //进程内存大小
 
-  np->parent = p;
+  np->parent = p; //设置父进程
 
   // copy saved user registers.
+  // 复制 trapframe 结构
   *(np->trapframe) = *(p->trapframe);
 
   // Cause fork to return 0 in the child.
+  // fork 在子进程中返回 0
   np->trapframe->a0 = 0;
 
   // increment reference counts on open file descriptors.
+  // 增加对文件描述符的引用计数
   for(i = 0; i < NOFILE; i++)
     if(p->ofile[i])
       np->ofile[i] = filedup(p->ofile[i]);
-  np->cwd = idup(p->cwd);
+  np->cwd = idup(p->cwd); //当前目录
 
-  safestrcpy(np->name, p->name, sizeof(p->name));
+  safestrcpy(np->name, p->name, sizeof(p->name)); //进程名称
 
-  pid = np->pid;
+  pid = np->pid; //需要返回新进程的 pid，所以需要读取内容
 
-  np->state = RUNNABLE;
+  np->state = RUNNABLE; //设置进程状态
 
-  release(&np->lock);
+  release(&np->lock); //
 
   return pid;
 }
@@ -329,6 +336,7 @@ reparent(struct proc *p)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait().
+// 等待子进程结束，并将 status 接受到参数*status 中，返回其 PID 
 void
 exit(int status)
 {
@@ -614,6 +622,7 @@ wakeup1(struct proc *p)
 // Kill the process with the given pid.
 // The victim won't exit until it tries to return
 // to user space (see usertrap() in trap.c).
+// 终止给定PID的进程，成功返回 0，失败返回 -1
 int
 kill(int pid)
 {

@@ -81,6 +81,8 @@ struct trapframe {
 };
 
 enum procstate { UNUSED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+//进程有 5 种状态
+//
 
 // Per-process state
 struct proc {

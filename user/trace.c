@@ -13,8 +13,12 @@ main(int argc, char *argv[])
     fprintf(2, "Usage: %s mask command\n", argv[0]);
     exit(1);
   }
-
-  if (trace(atoi(argv[1])) < 0) {
+  //printf("%s\n",argv[1]);
+  printf("argv[1]: %d\n",atoi(argv[1]));
+  printf("argv[2]: %s\n",argv[2]);
+  printf("argv[3]: %s\n",argv[3]);
+  printf("argv[4]: %s\n",argv[4]);
+  if (trace(atoi(argv[1])) < 0) { //执行 trace 系统调用
     fprintf(2, "%s: trace failed\n", argv[0]);
     exit(1);
   }
@@ -22,6 +26,6 @@ main(int argc, char *argv[])
   for(i = 2; i < argc && i < MAXARG; i++){
     nargv[i-2] = argv[i];
   }
-  exec(nargv[0], nargv);
+  exec(nargv[0], nargv); //执行程序，这里一切正常
   exit(0);
 }

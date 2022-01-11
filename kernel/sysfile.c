@@ -413,16 +413,17 @@ sys_chdir(void)
 }
 
 uint64
-sys_exec(void)
+sys_exec(void) //没有参数，本质上是包装了 exec
 {
-  char path[MAXPATH], *argv[MAXARG];
+  char path[MAXPATH], *argv[MAXARG]; //一个char数组，一个char 的指针数组
   int i;
   uint64 uargv, uarg;
 
   if(argstr(0, path, MAXPATH) < 0 || argaddr(1, &uargv) < 0){
+    //这里实际上用户参数取出
     return -1;
   }
-  memset(argv, 0, sizeof(argv));
+  memset(argv, 0, sizeof(argv)); //将 argv 全部初始化为 0
   for(i=0;; i++){
     if(i >= NELEM(argv)){
       goto bad;
@@ -441,7 +442,7 @@ sys_exec(void)
       goto bad;
   }
 
-  int ret = exec(path, argv);
+  int ret = exec(path, argv); //执行系统调用
 
   for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
     kfree(argv[i]);
