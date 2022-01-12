@@ -18,23 +18,24 @@ sinfo(struct sysinfo *info) {
 int
 countfree()
 {
-  uint64 sz0 = (uint64)sbrk(0);
+  uint64 sz0 = (uint64)sbrk(0);//sbrk函数，使进程内存增加 0 字节，返回新内存的起始地址
   struct sysinfo info;
   int n = 0;
 
   while(1){
-    if((uint64)sbrk(PGSIZE) == 0xffffffffffffffff){
+    if((uint64)sbrk(PGSIZE) == 0xffffffffffffffff){ //PGSIZE 的大小为 4096
+      //如果返回虚拟地址等于最大的地址，说明超出了地址空间
       break;
     }
-    n += PGSIZE;
+    n += PGSIZE; //不断累加
   }
-  sinfo(&info);
-  if (info.freemem != 0) {
+  sinfo(&info); //应该在地址中填值
+  if (info.freemem != 0) { //其中的 freemem 值应该为 0
     printf("FAIL: there is no free mem, but sysinfo.freemem=%d\n",
       info.freemem);
     exit(1);
   }
-  sbrk(-((uint64)sbrk(0) - sz0));
+  sbrk(-((uint64)sbrk(0) - sz0)); //这里没看懂
   return n;
 }
 
@@ -43,9 +44,9 @@ testmem() {
   struct sysinfo info;
   uint64 n = countfree();
   
-  sinfo(&info);
+  sinfo(&info); //填充 info空间
 
-  if (info.freemem!= n) {
+  if (info.freemem!= n) { //及kk
     printf("FAIL: free mem %d (bytes) instead of %d\n", info.freemem, n);
     exit(1);
   }
@@ -96,8 +97,8 @@ void testproc() {
   int status;
   int pid;
   
-  sinfo(&info);
-  nproc = info.nproc;
+  sinfo(&info); //取其中的结构
+  nproc = info.nproc; //测试该结构
 
   pid = fork();
   if(pid < 0){
@@ -125,8 +126,8 @@ main(int argc, char *argv[])
 {
   printf("sysinfotest: start\n");
   testcall(); //中间主要执行了这个三个函数
-  testmem();
-  testproc();
+  testmem(); //测试获取空闲内存
+  testproc(); //测试获取进程状态不是 UNUSED 的进程数量
   printf("sysinfotest: OK\n");
   exit(0);
 }

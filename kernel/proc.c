@@ -705,3 +705,20 @@ procdump(void)
     printf("\n");
   }
 }
+
+//sysinfo
+int
+get_nproc(void){ //获取进程的数量
+
+  struct proc *p;
+  int num = 0;
+  for(p = proc; p < &proc[NPROC]; p++) {//这里的 proc 也是全局变量
+    acquire(&p->lock); //锁可以暂时忽略
+    if(p->state != UNUSED) { //找到 进程状态不是 UNUSED 的进程
+      ++num;
+    }
+    release(&p->lock);
+  }
+  return num;
+}
+

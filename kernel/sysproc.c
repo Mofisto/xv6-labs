@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -105,11 +106,25 @@ sys_trace(void) //实现的函数
   myproc()->mask=mask;
   return 0;
 }
-uint64 
-sys_sysinfo(void) //要实现一个系统调用。。。。
+
+uint64
+sys_sysinfo(void)
 {
-  printf("test\n"); 
-  return 0xffffffffffffffff;
+
+  uint64 addr;
+  if(argaddr(0, &addr) < 0) //获取用户态传入的地址
+    return -1;
+  struct sysinfo info;
+  info.freemem = get_freemem(); //主要得到这三个结构的值
+  info.nproc = get_nproc();
+  //info.freefd = get_free_fd();
+
+  //copyout 参数：进程页表，用户态目标地址，数据源地址，数据大小
+  //返回值：数据大小
+  if(copyout(myproc()->pagetable, addr, (char *)&info, sizeof(info)) < 0)
+    return -1;
+
+  return 0;
 }
 
 
