@@ -264,11 +264,14 @@ fork(void)
   struct proc *np;
   struct proc *p = myproc(); //获取一个指向当前进程的 proc 结构的指针
 
+
   // Allocate process.
   // 分配新的进程内存
   if((np = allocproc()) == 0){
     return -1;
   }
+
+  np->mask=p->mask;//继承掩码
 
   // Copy user memory from parent to child.
   // 从父进程复制用户内存到子进程

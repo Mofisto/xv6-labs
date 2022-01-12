@@ -136,7 +136,13 @@ static uint64 (*syscalls[])(void) = {
 //方法签名相同
 //[ ] 指定的是索引，后面是数组成员
 //没想到 C 支持这种格式，从而达到类型字典的效果
-
+static char syscall_name[23][10]={
+  "fork","exit","wait","pipe","read",
+  "kill","exec","fstat","chdir", "dup",
+  "getpid","sbrk","sleep","uptime","open",
+  "write","mknod","unlink", "link","mkdir",
+  "close","trace","sysinfo",
+};
 void
 syscall(void)
 {
@@ -149,6 +155,15 @@ syscall(void)
     //将系统调用的函数赋值给 a0结构
     //调用堆栈中可以看到，这里就会执行对应的系统调用
     //也就是系统调用只是按照索引去对应的函数地址执行，并不是直接按照函数名执行
+    //int i= 1<<num; //得到调用对应的掩码
+    if(p->mask !=0 &&((1<<num)& p->mask) !=0)
+      //如果 ->mask 不为0,说明设置了掩码
+      //并且 1<<num(系统调用的掩码形式）和 当前的掩码进行与运算
+      //如果不为0，说明设置对应的系统调用，打印相关信息
+    {
+        printf("%d: syscall %s -> %d\n",p->pid,syscall_name[num-1],p->trapframe->a0);
+        //因为上面字符是从0开始，所以需要 num-1
+    }
   } else {
     printf("%d %s: unknown sys call %d\n",
             p->pid, p->name, num);

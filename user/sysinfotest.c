@@ -6,8 +6,8 @@
 
 void
 sinfo(struct sysinfo *info) {
-  if (sysinfo(info) < 0) {
-    printf("FAIL: sysinfo failed");
+  if (sysinfo(info) < 0) { //返回值不能小于0
+    printf("FAIL: sysinfo failed"); 
     exit(1);
   }
 }
@@ -79,13 +79,13 @@ void
 testcall() {
   struct sysinfo info;
   
-  if (sysinfo(&info) < 0) {
+  if (sysinfo(&info) < 0) { //该函数的返回值需要>=0，否则报错
     printf("FAIL: sysinfo failed\n");
     exit(1);
   }
 
   if (sysinfo((struct sysinfo *) 0xeaeb0b5b00002f5e) !=  0xffffffffffffffff) {
-    printf("FAIL: sysinfo succeeded with bad argument\n");
+    printf("FAIL: sysinfo succeeded with bad argument\n"); //返回值需要等于这个值。
     exit(1);
   }
 }
@@ -124,7 +124,7 @@ int
 main(int argc, char *argv[])
 {
   printf("sysinfotest: start\n");
-  testcall();
+  testcall(); //中间主要执行了这个三个函数
   testmem();
   testproc();
   printf("sysinfotest: OK\n");
