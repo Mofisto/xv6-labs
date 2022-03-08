@@ -9,7 +9,9 @@
 /*
  * the kernel's page table.
  */
-pagetable_t kernel_pagetable;
+pagetable_t kernel_pagetable; //这是一个指向页表页的指针
+//可以是内核页表，也可以是进程的页表
+//
 
 extern char etext[];  // kernel.ld sets this to end of kernel code.
 
@@ -17,15 +19,17 @@ extern char trampoline[]; // trampoline.S
 
 /*
  * create a direct-map page table for the kernel.
+ * 用于初始化内核页表，在开启分页机制前调用，直接对物理地址进行操作
  */
 void
-kvminit()
+kvminit() 
 {
-  kernel_pagetable = (pagetable_t) kalloc();
-  memset(kernel_pagetable, 0, PGSIZE);
+  kernel_pagetable = (pagetable_t) kalloc();//首先申请了一个页面用于保存以及页表
+  memset(kernel_pagetable, 0, PGSIZE); //初始化页表内存
 
   // uart registers
-  kvmmap(UART0, UART0, PGSIZE, PTE_R | PTE_W);
+  kvmmap(UART0, UART0, PGSIZE, PTE_R | PTE_W);//QEMU的 UART0
+  //将物理地址中的 URT0 CLINT 等影响到内核页表中
 
   // virtio mmio disk interface
   kvmmap(VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
@@ -49,11 +53,21 @@ kvminit()
 
 // Switch h/w page table register to the kernel's page table,
 // and enable paging.
+// 开启分页模式 
 void
 kvminithart()
 {
   w_satp(MAKE_SATP(kernel_pagetable));
   sfence_vma();
+  //MAKE_SATP 是一个宏
+  //MAKE_SATP(kernel_pagetable) 
+  //SATP_SV39 | (((uint64)pagetable) >> 12)
+  //ATP_SV39 (8L << 60) 
+  //asm volatile("csrw satp, %0" : : "r" (x));
+  //asm volatile("sfence.vma zero, zero");
+  //解释一下这个宏
+  //8L<<60 填充 MODE ，这里的 MODE 为 8，表示使用的是 SV39 
+  //pagetable>>12 其实不太理解，丢弃了低 12 位?
 }
 
 // Return the address of the PTE in page table pagetable
@@ -68,8 +82,9 @@ kvminithart()
 //   21..29 -- 9 bits of level-1 index.
 //   12..20 -- 9 bits of level-0 index.
 //    0..11 -- 12 bits of byte offset within the page.
+// 通过虚拟地址得到PTE
 pte_t *
-walk(pagetable_t pagetable, uint64 va, int alloc)
+walk(pagetable_t pagetable, uint64 va, int alloc) 
 {
   if(va >= MAXVA)
     panic("walk");
@@ -78,6 +93,8 @@ walk(pagetable_t pagetable, uint64 va, int alloc)
     pte_t *pte = &pagetable[PX(level, va)];
     if(*pte & PTE_V) {
       pagetable = (pagetable_t)PTE2PA(*pte);
+      //printf("%p\n",pte);
+      //printf("%p\n",pagetable);
     } else {
       if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)
         return 0;
@@ -145,6 +162,7 @@ kvmpa(uint64 va)
 // physical addresses starting at pa. va and size might not
 // be page-aligned. Returns 0 on success, -1 if walk() couldn't
 // allocate a needed page-table page.
+// 将虚拟地址映射到物理地址
 int
 mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
 {
@@ -439,4 +457,53 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   } else {
     return -1;
   }
+} 
+
+
+   //printf("page table %p\n",pagetable);//打印页表
+   //for(int i=0;i<512;i++)
+   //{
+   //  pte_t *pte=&pagetable[i];//遍历一级页表
+   //  if(*pte & PTE_V)//如果是有效值
+   //  {
+   //    pagetable_t pa=(pagetable_t)PTE2PA(*pte);
+   //    printf("..%d: pte %p pa %p\n",i,*pte,pa);
+   //    for(int j=0;j<512;j++)
+   //    {
+   //       pte_t *pte1=&pa[j];//遍历二级页表
+   //       if(*pte1 & PTE_V)
+   //       {
+   //         pagetable_t pa1=(pagetable_t)PTE2PA(*pte1);
+   //         printf(".. ..%d: pte %p pa %p\n",j,*pte1,pa1);
+   //         for(int k=0;k<512;k++)
+   //         {
+   //           pte_t *pte2=&pa1[k];
+   //           if(*pte2 & PTE_V)
+   //           {
+   //             pagetable_t pa2=(pagetable_t)PTE2PA(*pte2);
+   //             printf(".. .. ..%d: pte %p pa %p\n",k,*pte2,pa2);
+   //           }
+   //         }
+   //       }
+   //    }
+   //  }
+   //}
+   
+void vmprint(pagetable_t pagetable)
+{
+   char *str =".."; 
+   //int len=strlen(str); //仍然不知道如何优化这个输出格式
+   for(int i=0;i<512;i++)
+   {
+     pte_t pte=pagetable[i];//貌似直接取值就就可以
+     if(pte & PTE_V) 
+     {
+       uint64 child=PTE2PA(pte);//将每一项转换为物理地址
+       printf("%s%d: pte %p pa %p\n",str,i,pte,(pagetable_t)child);
+       if((pte & (PTE_R|PTE_W|PTE_X))==0)//如果 RWX 都为0，则指向下一级页表
+       {
+         vmprint((pagetable_t)child);
+       }
+     }
+   }
 }

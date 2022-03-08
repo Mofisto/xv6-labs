@@ -154,12 +154,14 @@ freeproc(struct proc *p)
 
 // Create a user page table for a given process,
 // with no user memory, but with trampoline pages.
+// 创建用户页表
 pagetable_t
 proc_pagetable(struct proc *p)
 {
   pagetable_t pagetable;
 
   // An empty page table.
+  // 创建页表入口？
   pagetable = uvmcreate();
   if(pagetable == 0)
     return 0;
@@ -182,7 +184,7 @@ proc_pagetable(struct proc *p)
     return 0;
   }
 
-  return pagetable;
+  return pagetable; //返回页表基地址
 }
 
 // Free a process's page table, and free the

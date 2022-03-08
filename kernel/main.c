@@ -21,7 +21,9 @@ main()
     printf("\n");
     kinit();         // physical page allocator
     kvminit();       // create kernel page table
+                     // 创建内核页表
     kvminithart();   // turn on paging
+                     //开启分页机制
     procinit();      // process table
     trapinit();      // trap vectors
     trapinithart();  // install kernel trap vector

@@ -26,8 +26,8 @@ struct {
 void
 kinit()
 {
-  initlock(&kmem.lock, "kmem");
-  freerange(end, (void*)PHYSTOP);
+  initlock(&kmem.lock, "kmem");//首先初始化锁
+  freerange(end, (void*)PHYSTOP);//将内核之后的全部空闲 RAM 以 4KB 为一页加入链表
 }
 
 void
@@ -65,18 +65,22 @@ kfree(void *pa)
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
+// 从物理内存分配 4096-byte 大小的内存
+// 返回内存指针
+//
 void *
 kalloc(void)
 {
   struct run *r;
 
-  acquire(&kmem.lock);
-  r = kmem.freelist;
+  acquire(&kmem.lock);//获取锁
+  r = kmem.freelist;//从kmem.freelist 中取出一个空闲页面
   if(r)
-    kmem.freelist = r->next;
-  release(&kmem.lock);
+    kmem.freelist = r->next; //看起来是个链表，然后指向下一个链表
+  release(&kmem.lock); //释放锁
 
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
+    //全部初始化
   return (void*)r;
 }
